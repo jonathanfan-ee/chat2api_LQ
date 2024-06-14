@@ -6,9 +6,17 @@ import string
 import time
 import uuid
 
+# from curl_cffi import requests
+# from fastapi import HTTPException
+
 import pybase64
 import websockets
 
+import urllib.parse
+
+def generate_download_link(file_download_url, index):
+    return f"\n[请点击这里下载，不要点击上面 {index+1}]({file_download_url})\n"
+    
 from api.files import get_file_content
 from api.models import model_system_fingerprint
 from api.tokens import split_tokens_from_content, calculate_image_tokens, num_tokens_from_messages
@@ -100,7 +108,20 @@ async def wss_stream_response(websocket, conversation_id):
         except Exception as e:
             logger.error(f"Error: {str(e)}")
             continue
-
+        
+async def stream_response(service, response, model, max_tokens):
+    chat_id = f"chatcmpl-{''.join(random.choice(string.ascii_letters + string.digits) for _ in range(29))}"
+    system_fingerprint_list = model_system_fingerprint.get(model, None)
+    system_fingerprint = random.choice(system_fingerprint_list) if system_fingerprint_list else None
+    created_time = int(time.time())
+    completion_tokens = -1
+    len_last_content = 0
+    len_last_citation = 0
+    last_message_id = None
+    last_content_type = None
+    last_recipient = None
+    start = False
+    end = False
 
 async def stream_response(service, response, model, max_tokens):
     chat_id = f"chatcmpl-{''.join(random.choice(string.ascii_letters + string.digits) for _ in range(29))}"
@@ -124,7 +145,6 @@ async def stream_response(service, response, model, max_tokens):
         try:
             if chunk.startswith("data: {"):
                 chunk_old_data = json.loads(chunk[6:])
-                finish_reason = None
                 message = chunk_old_data.get("message", {})
                 role = message.get('author', {}).get('role')
                 if role == 'user' or role == 'system':
@@ -142,6 +162,8 @@ async def stream_response(service, response, model, max_tokens):
                 message_id = message.get("id")
                 content = message.get("content", {})
                 recipient = message.get("recipient", "")
+
+                finish_reason = None  # 初始化 finish_reason
 
                 if not message and chunk_old_data.get("type") == "moderation":
                     delta = {"role": "assistant", "content": moderation_message}
@@ -212,18 +234,21 @@ async def stream_response(service, response, model, max_tokens):
                         if not new_text:
                             matches = re.findall(r'\(sandbox:(.*?)\)', part)
                             if matches:
-                                file_url_content = ""
+                                logger.debug(f"Found sandbox paths: {matches}")
+                                file_url_content = "\n"
                                 for i, sandbox_path in enumerate(matches):
                                     file_download_url = await service.get_response_file_url(conversation_id, message_id, sandbox_path)
+                                    logger.debug(f"File download URL for {sandbox_path}: {file_download_url}")
                                     if file_download_url:
-                                        file_url_content += f"\n```\n![File {i+1}]({file_download_url})\n"
+                                        # file_url_content += f"\n[请点击这里下载，不要点击上面 {i+1}]({file_download_url})\n"
+                                        file_url_content += generate_download_link(file_download_url, i)
                                 delta = {"content": file_url_content}
                             else:
                                 delta = {}
                         else:
                             delta = {"content": new_text}
-                        finish_reason = "stop"
-                        end = True
+                        # Do not set finish_reason to "stop" here
+                        end = False  # Ensure it doesn't end yet
                     else:
                         last_message_id = None
                         len_last_content = 0
@@ -254,7 +279,46 @@ async def stream_response(service, response, model, max_tokens):
                         "conversation_id": conversation_id,
                     })
                 completion_tokens += 1
+                #logger.debug(f"Processed response: {json.dumps(chunk_new_data, indent=2)}")
                 yield f"data: {json.dumps(chunk_new_data)}\n\n"
+
+                # Add an additional chunk with content "test"
+                if status == "finished_successfully" and end is False:
+                    extra_chunk_data = {
+                        "id": chat_id,
+                        "object": "chat.completion.chunk",
+                        "created": created_time,
+                        "model": model,
+                        "choices": [
+                            {
+                                "index": 0,
+                                "delta": {"content": " "},
+                                "logprobs": None,
+                                "finish_reason": None
+                            }
+                        ],
+                        "system_fingerprint": system_fingerprint
+                    }
+                    yield f"data: {json.dumps(extra_chunk_data)}\n\n"
+
+                    # Now set finish_reason to "stop"
+                    final_chunk_data = {
+                        "id": chat_id,
+                        "object": "chat.completion.chunk",
+                        "created": created_time,
+                        "model": model,
+                        "choices": [
+                            {
+                                "index": 0,
+                                "delta": {},
+                                "logprobs": None,
+                                "finish_reason": "stop"
+                            }
+                        ],
+                        "system_fingerprint": system_fingerprint
+                    }
+                    yield f"data: {json.dumps(final_chunk_data)}\n\n"
+                    end = True
             elif chunk.startswith("data: [DONE]"):
                 yield "data: [DONE]\n\n"
             else:
@@ -262,8 +326,7 @@ async def stream_response(service, response, model, max_tokens):
         except Exception as e:
             logger.error(f"Error: {chunk}, details: {str(e)}")
             continue
-
-
+        
 def get_url_from_content(content):
     if isinstance(content, str) and content.startswith('http'):
         try:

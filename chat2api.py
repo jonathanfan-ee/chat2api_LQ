@@ -56,11 +56,37 @@ async def to_send_conversation(request_data, req_token):
         logger.error(f"Server error, {str(e)}")
         raise HTTPException(status_code=500, detail="Server error")
 
-
 @app.post(f"/{api_prefix}/v1/chat/completions" if api_prefix else "/v1/chat/completions")
 async def send_conversation(request: Request, req_token: str = Depends(oauth2_scheme)):
     try:
+        # 输出未进行提取的请求内容
+        request_body = await request.body()
+        logger.debug(f"Raw request body: {request_body.decode('utf-8')}")
+
+        # 提取 JSON 数据并赋值给 request_data
         request_data = await request.json()
+
+        # 处理 request_data，将 "type":"image_url","image_url" 改为 "type":"file_url","url"
+        for message in request_data.get('messages', []):
+            if 'content' in message and isinstance(message['content'], list):
+                # 新增处理逻辑：提取 URL 和 text 拼接成一个字符串
+                new_content = ""
+                urls = []
+                texts = []
+                for item in message['content']:
+                    if item.get('type') == 'text':
+                        texts.append(item.get('text', ''))
+                    elif item.get('type') == 'image_url':
+                        urls.append(item.get('image_url', ''))
+                
+                # 拼接 URL 和 text，并用 '\n ' 分隔
+                new_content = "\n ".join(urls + texts).strip()
+                
+                # 将新内容赋值回 message['content']
+                message['content'] = new_content
+
+        # 输出提取赋值后的 request_data 内容
+        logger.debug(f"Extracted request data: {request_data}")
     except Exception:
         raise HTTPException(status_code=400, detail={"error": "Invalid JSON body"})
 
@@ -84,8 +110,7 @@ async def send_conversation(request: Request, req_token: str = Depends(oauth2_sc
         await chat_service.close_client()
         logger.error(f"Server error, {str(e)}")
         raise HTTPException(status_code=500, detail="Server error")
-
-
+    
 @app.get(f"/{api_prefix}/tokens" if api_prefix else "/tokens", response_class=HTMLResponse)
 async def upload_html(request: Request):
     tokens_count = len(token_list)
