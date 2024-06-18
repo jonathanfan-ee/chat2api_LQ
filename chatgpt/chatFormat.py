@@ -109,19 +109,6 @@ async def wss_stream_response(websocket, conversation_id):
             logger.error(f"Error: {str(e)}")
             continue
         
-async def stream_response(service, response, model, max_tokens):
-    chat_id = f"chatcmpl-{''.join(random.choice(string.ascii_letters + string.digits) for _ in range(29))}"
-    system_fingerprint_list = model_system_fingerprint.get(model, None)
-    system_fingerprint = random.choice(system_fingerprint_list) if system_fingerprint_list else None
-    created_time = int(time.time())
-    completion_tokens = -1
-    len_last_content = 0
-    len_last_citation = 0
-    last_message_id = None
-    last_content_type = None
-    last_recipient = None
-    start = False
-    end = False
 
 async def stream_response(service, response, model, max_tokens):
     chat_id = f"chatcmpl-{''.join(random.choice(string.ascii_letters + string.digits) for _ in range(29))}"
@@ -379,7 +366,7 @@ async def api_messages_to_chat(service, api_messages, upload_by_url=False):
         if isinstance(content, list):
             parts = []
             attachments = []
-            content_type = "multimodal_text"
+            content_type = "text"
             for i in content:
                 if i.get("type") == "text":
                     parts.append(i.get("text"))
@@ -435,6 +422,7 @@ async def api_messages_to_chat(service, api_messages, upload_by_url=False):
             "metadata": metadata
         }
         chat_messages.append(chat_message)
+        logger.debug(f"send chat_message: {chat_message}")
     text_tokens = await num_tokens_from_messages(api_messages, service.resp_model)
     prompt_tokens = text_tokens + file_tokens
     return chat_messages, prompt_tokens
