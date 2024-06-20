@@ -247,7 +247,7 @@ class ChatService:
             chat_messages, self.prompt_tokens = await api_messages_to_chat(self, self.api_messages, upload_by_url)
         except Exception as e:
             logger.error(f"Failed to format messages: {str(e)}")
-            raise HTTPException(status_code=400, detail="Failed to format messages.")
+            raise HTTPException(status_code=422, detail="Failed to format messages.Temporary chage 400 status code to 422")
         self.chat_headers = self.base_headers.copy()
         self.chat_headers.update({
             'Accept': 'text/event-stream',
