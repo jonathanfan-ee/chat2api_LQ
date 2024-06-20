@@ -136,6 +136,11 @@ async def stream_response(service, response, model, max_tokens):
         try:
             if chunk.startswith("data: {"):
                 chunk_old_data = json.loads(chunk[6:])
+                recipient = chunk_old_data.get("message", {}).get("recipient", "")
+                # 跳过特定响应
+                if recipient == "myfiles_browser":
+                    continue
+                
                 message = chunk_old_data.get("message", {})
                 role = message.get('author', {}).get('role')
                 if role == 'user' or role == 'system':
