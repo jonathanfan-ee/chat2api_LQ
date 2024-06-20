@@ -11,6 +11,7 @@ import uuid
 
 import pybase64
 import websockets
+from fastapi import HTTPException
 
 import urllib.parse
 
@@ -55,6 +56,8 @@ async def format_not_stream_response(response, prompt_tokens, max_tokens, model)
         "completion_tokens": completion_tokens,
         "total_tokens": prompt_tokens + completion_tokens
     }
+    if not message.get("content"):
+        raise HTTPException(status_code=403, detail="No content in the message.")
     return {
         "id": chat_id,
         "object": "chat.completion",
@@ -126,6 +129,7 @@ async def stream_response(service, response, model, max_tokens):
 
     async for chunk in response:
         chunk = chunk.decode("utf-8")
+        # chunk = 'data: {"message": null, "conversation_id": "38b8bfcf-9912-45db-a48e-b62fb585c855", "error": "Our systems have detected unusual activity coming from your system. Please try again later."}'
         if end:
             yield "data: [DONE]\n\n"
             break
@@ -311,6 +315,12 @@ async def stream_response(service, response, model, max_tokens):
             else:
                 continue
         except Exception as e:
+            if chunk.startswith("data: "):
+                chunk_data = json.loads(chunk[6:])
+                if chunk_data.get("error"):
+                    logger.error(f"Error: {chunk_data.get('error')}")
+                    yield "data: [DONE]\n\n"
+                    break
             logger.error(f"Error: {chunk}, details: {str(e)}")
             continue
         
