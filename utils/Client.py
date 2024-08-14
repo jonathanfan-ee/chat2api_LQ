@@ -4,7 +4,7 @@ from curl_cffi.requests import AsyncSession
 
 
 class Client:
-    def __init__(self, proxy=None, timeout=15, verify=True):
+    def __init__(self, proxy=None, timeout=30, verify=True):
         self.proxies = {
             "http": proxy,
             "https": proxy,
@@ -20,7 +20,7 @@ class Client:
         return r
 
     async def post_stream(self, *args, headers=None, cookies=None, **kwargs):
-        if self.session:
+        if self.session: 
             headers = headers or self.session.headers
             cookies = cookies or self.session.cookies
         r = await self.session2.post(*args, headers=headers, cookies=cookies, impersonate=self.impersonate, **kwargs)
