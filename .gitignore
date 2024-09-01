@@ -5,3 +5,5 @@
 /tmp/
 /data/
 .DS_Store
+settings.json
+*.rsls
