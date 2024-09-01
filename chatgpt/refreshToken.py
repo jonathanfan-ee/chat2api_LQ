@@ -7,6 +7,7 @@ from fastapi import HTTPException
 from utils.Client import Client
 from utils.Logger import logger
 from utils.config import proxy_url_list
+import requests
 import chatgpt.globals as globals
 
 
@@ -33,14 +34,14 @@ async def rt2ac(refresh_token, force_refresh=False):
 
 async def chat_refresh(refresh_token):
     data = {
-        "client_id": "pdlLIX2Y72MIl2rhLhTE9VV9bN905kBh",
-        "grant_type": "refresh_token",
-        "redirect_uri": "com.openai.chat://auth0.openai.com/ios/com.openai.chat/callback",
         "refresh_token": refresh_token
+    }
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
     }
     client = Client(proxy=random.choice(proxy_url_list) if proxy_url_list else None)
     try:
-        r = await client.post("https://auth0.openai.com/oauth/token", json=data, timeout=5)
+        r = await client.post("https://token.oaifree.com/api/auth/refresh", data=data, headers=headers, timeout=60)
         if r.status_code == 200:
             access_token = r.json()['access_token']
             return access_token
