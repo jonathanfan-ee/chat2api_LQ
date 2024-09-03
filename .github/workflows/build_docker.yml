@@ -3,7 +3,7 @@ name: Build Docker Image
 on:
   push:
     branches:
-      - main
+      - dev
     paths-ignore:
       - 'README.md'
       - 'docker-compose.yml'
@@ -34,10 +34,11 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: lanqian528/chat2api
+          images: jonathanfanee/chat2api_LQ
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=v1.4.5
+            type=raw,value=dev,enable=!{{is_default_branch}}
+            type=raw,value=v1.4.5A
 
       - name: Build and push
         uses: docker/build-push-action@v5
