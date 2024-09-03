@@ -34,11 +34,11 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: jonathanfanee/chat2api_LQ
+          images: jonathanfanee/chat2api_lq
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=raw,value=dev,enable=${{ github.ref != 'refs/heads/main' }}
-            type=raw,value=v1.4.5A
+            type=raw,value=v1.4.5Boaifree
 
       - name: Build and push
         uses: docker/build-push-action@v5
