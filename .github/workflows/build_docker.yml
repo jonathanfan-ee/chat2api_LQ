@@ -5,10 +5,10 @@ on:
     branches:
       - dev
     paths-ignore:
-      - 'README.md'
-      - 'docker-compose.yml'
-      - 'docs/**'
-      - '.github/workflows/build_docker.yml'
+      - "README.md"
+      - "docker-compose.yml"
+      - "docs/**"
+      - ".github/workflows/build_docker.yml"
   workflow_dispatch:
 
 jobs:
@@ -36,8 +36,8 @@ jobs:
         with:
           images: jonathanfanee/chat2api_LQ
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=dev,enable=!{{is_default_branch}}
+            type=raw,value=latest,enable=${{ is_default_branch }}
+            type=raw,value=dev,enable=${{ !is_default_branch }}
             type=raw,value=v1.4.5A
 
       - name: Build and push
