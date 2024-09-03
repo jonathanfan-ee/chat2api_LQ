@@ -419,7 +419,7 @@ async def api_messages_to_chat(service, api_messages, upload_by_url=False):
                             width, height = file_meta["width"], file_meta["height"]
                             file_tokens += await calculate_image_tokens(width, height, detail)
                             parts.append({
-                                # "content_type": "image_asset_pointer",
+                                "content_type": "image_asset_pointer",
                                 "asset_pointer": f"file-service://{file_id}",
                                 "size_bytes": file_size,
                                 "width": width,

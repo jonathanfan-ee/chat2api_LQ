@@ -38,7 +38,7 @@ jobs:
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=raw,value=dev,enable=${{ github.ref != 'refs/heads/main' }}
-            type=raw,value=v1.4.5Boaifree
+            type=raw,value=v1.4.5Cnomalall
 
       - name: Build and push
         uses: docker/build-push-action@v5
