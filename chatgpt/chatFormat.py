@@ -15,7 +15,7 @@ from fastapi import HTTPException
 
 import os
 import urllib.parse
-from ..utils.config import file_proxy_url
+from utils.config import file_proxy_url
 
 def generate_download_link(file_download_url, index):
     if file_proxy_url:
