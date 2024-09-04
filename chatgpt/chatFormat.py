@@ -13,10 +13,18 @@ import pybase64
 import websockets
 from fastapi import HTTPException
 
+import os
 import urllib.parse
+from ..utils.config import file_proxy_url
 
 def generate_download_link(file_download_url, index):
-    return f"\n[请点击这里下载，不要点击上面 {index+1}]({file_download_url})\n"
+    if file_proxy_url:
+        parsed_url = urllib.parse.urlparse(file_download_url)
+        file_path = parsed_url.path
+        proxy_download_url = urllib.parse.urljoin(file_proxy_url, file_path.lstrip('/'))
+        return f"\n[请点击这里下载，不要点击上面 {index+1}]({proxy_download_url})\n"
+    else:
+        return f"\n[请点击这里下载，不要点击上面 {index+1}]({file_download_url})\n"
     
 from api.files import get_file_content
 from api.models import model_system_fingerprint
