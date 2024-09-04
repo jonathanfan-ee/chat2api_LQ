@@ -19,12 +19,27 @@ from utils.config import file_proxy_url
 
 def generate_download_link(file_download_url, index):
     if file_proxy_url:
+        # 解析原始 URL
         parsed_url = urllib.parse.urlparse(file_download_url)
+        
+        # 获取 URL 的路径、查询参数和片段
         file_path = parsed_url.path
+        query = parsed_url.query
+        fragment = parsed_url.fragment
+        
+        # 拼接路径部分
         proxy_download_url = urllib.parse.urljoin(file_proxy_url, file_path.lstrip('/'))
-        return f"\n[请点击这里下载，不要点击上面 {index+1}]({proxy_download_url})\n"
+        
+        # 重新组合完整的 URL
+        if query:
+            proxy_download_url = f"{proxy_download_url}?{query}"
+        if fragment:
+            proxy_download_url = f"{proxy_download_url}#{fragment}"
+        
+        return f"\n[请点击这里下载，不要点击上面 {index + 1}]({proxy_download_url})\n"
     else:
-        return f"\n[请点击这里下载，不要点击上面 {index+1}]({file_download_url})\n"
+        # 如果没有配置代理，则直接使用原始下载链接
+        return f"\n[请点击这里下载，不要点击上面 {index + 1}]({file_download_url})\n"
     
 from api.files import get_file_content
 from api.models import model_system_fingerprint
