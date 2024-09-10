@@ -8,10 +8,6 @@
 
 🔍 回复格式与真实 API 完全一致，适配几乎所有客户端
 
-## 赞助商
-
-感谢 Capsolver 对本项目的赞助，对于市面上任何人机验证码，你可以使用 [https://capsolver.com](https://capsolver.com/?utm_source=github&utm_medium=github_banner&utm_campaign=chat2api) 来解决
-
 ## 交流群
 
 [https://t.me/chat2api](https://t.me/chat2api)
@@ -24,9 +20,15 @@
 2. 报错的日志信息（敏感信息打码）
 3. 接口返回的状态码和响应体
 
+## 赞助商
+
+感谢 Capsolver 对本项目的赞助，对于市面上任何人机验证码，你可以使用 [Capsolver](https://www.capsolver.com/zh?utm_source=github&utm_medium=repo&utm_campaign=scraping&utm_term=chat2api) 来解决
+
+[![Capsolver](docs/capsolver.png)](https://www.capsolver.com/zh?utm_source=github&utm_medium=repo&utm_campaign=scraping&utm_term=chat2api)
+
 ## 功能
 
-### 最新版 v1.4.5
+### 最新版 v1.4.6
 
 > 已完成
 > - [x] 流式、非流式传输
