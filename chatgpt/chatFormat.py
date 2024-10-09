@@ -474,6 +474,13 @@ async def api_messages_to_chat(service, api_messages, upload_by_url=False):
                                 "name": file_name,
                                 "mime_type": mime_type,
                             })
+                    else:
+                        # 上传失败，处理方式
+                        logger.error(f"Failed to upload file from URL: {url}")
+                        # 选项1：跳过此文件
+                        continue
+                        # 选项2：抛出异常
+                        # raise Exception(f"Failed to upload file from URL: {url}")
             metadata = {
                 "attachments": attachments
             }
