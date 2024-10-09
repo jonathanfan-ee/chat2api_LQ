@@ -75,31 +75,36 @@ async def send_conversation(request: Request, req_token: str = Depends(oauth2_sc
         # 提取 JSON 数据并赋值给 request_data
         request_data = await request.json()
 
-        # 处理 request_data，将 "type":"image_url","image_url" 改为 "type":"file_url","url"
+        # 处理 request_data，将非标准格式的 'image_url' 转换为标准格式
         for message in request_data.get('messages', []):
             if 'content' in message and isinstance(message['content'], list):
-                # 新增处理逻辑：提取 URL 和 text 拼接成一个字符串
-                new_content = ""
                 urls = []
                 texts = []
                 for item in message['content']:
                     if item.get('type') == 'text':
                         texts.append(item.get('text', ''))
                     elif item.get('type') == 'image_url':
-                        image_url = item.get('image_url', {}).get('url', '')
-                        urls.append(image_url)
-
-                
-                # 拼接 URL 和 text，并用 '\n ' 分隔
+                        image_url_field = item.get('image_url', '')
+                        if isinstance(image_url_field, dict):
+                            image_url = image_url_field.get('url', '')
+                        elif isinstance(image_url_field, str):
+                            image_url = image_url_field
+                        else:
+                            logger.warning(f"Unrecognized image_url format: {image_url_field}")
+                            continue
+                        if image_url:
+                            urls.append(image_url)
+                # 拼接 URLs 和 texts，并用 '\n ' 分隔
                 new_content = "\n ".join(urls + texts).strip()
-                
                 # 将新内容赋值回 message['content']
                 message['content'] = new_content
 
         # 输出提取赋值后的 request_data 内容
         logger.debug(f"Extracted request data: {request_data}")
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error processing request data: {e}")
         raise HTTPException(status_code=400, detail={"error": "Invalid JSON body"})
+
     chat_service, res = await async_retry(process, request_data, req_token)
     try:
         if isinstance(res, types.AsyncGeneratorType):
