@@ -86,7 +86,9 @@ async def send_conversation(request: Request, req_token: str = Depends(oauth2_sc
                     if item.get('type') == 'text':
                         texts.append(item.get('text', ''))
                     elif item.get('type') == 'image_url':
-                        urls.append(item.get('image_url', ''))
+                        image_url = item.get('image_url', {}).get('url', '')
+                        urls.append(image_url)
+
                 
                 # 拼接 URL 和 text，并用 '\n ' 分隔
                 new_content = "\n ".join(urls + texts).strip()
