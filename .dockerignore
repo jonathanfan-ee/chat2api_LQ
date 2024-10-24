@@ -5,6 +5,8 @@
 /docs/
 /tmp/
 /data/
+/.venv/
+/.vscode/
 .DS_Store
 settings.json
 *.rsls
