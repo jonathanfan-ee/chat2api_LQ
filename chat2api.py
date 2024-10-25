@@ -275,6 +275,8 @@ if enable_gateway:
 
 @app.get("/")
 async def chatgpt(request: Request):
+    if not enable_gateway:
+        raise HTTPException(status_code=404, detail="Gateway is disabled")
     req_token = get_req_token(authorization_list[0])
     access_token = await verify_token(req_token)
     response = templates.TemplateResponse("chatgpt.html", {"request": request, "access_token": access_token})
