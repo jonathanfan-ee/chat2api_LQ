@@ -261,3 +261,9 @@ else:
     @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH", "TRACE"])
     async def reverse_proxy():
         raise HTTPException(status_code=404, detail="Gateway is disabled")
+@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH", "TRACE"])
+async def reverse_proxy(request: Request, path: str):
+    if path.startswith("c/"):
+        redirect_url = str(request.base_url)
+        return RedirectResponse(url=redirect_url, status_code=302)
+    return await chatgpt_reverse_proxy(request, path)
