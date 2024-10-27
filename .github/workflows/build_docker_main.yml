@@ -3,12 +3,12 @@ name: Build Docker Image
 on:
   push:
     branches:
-      - dev
+      - main
     paths-ignore:
-      - "README.md"
-      - "docker-compose.yml"
-      - "docs/**"
-      - ".github/workflows/build_docker.yml"
+      - 'README.md'
+      - 'docker-compose.yml'
+      - 'docs/**'
+      - '.github/workflows/build_docker.yml'
   workflow_dispatch:
 
 jobs:
@@ -39,7 +39,6 @@ jobs:
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=raw,value=dev,enable=${{ github.ref != 'refs/heads/main' }}
             type=raw,value=v1.5.11
-            
 
       - name: Build and push
         uses: docker/build-push-action@v5
