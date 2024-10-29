@@ -278,16 +278,16 @@ if enable_gateway:
     chatgpt_paths = ["c/"]
 
 
-@app.get("/")
-async def chatgpt(request: Request):
-    if not enable_gateway:
-        raise HTTPException(status_code=404, detail="Gateway is disabled")
-    req_token = get_req_token(authorization_list[0])
-    access_token = await verify_token(req_token)
-    response = templates.TemplateResponse("chatgpt.html", {"request": request, "access_token": access_token})
-    response.set_cookie("req_token", value=req_token)
-    response.set_cookie("access_token", value=access_token)
-    return response
+    @app.get("/")
+    async def chatgpt(request: Request):
+        if not enable_gateway:
+            raise HTTPException(status_code=404, detail="Gateway is disabled")
+        req_token = get_req_token(authorization_list[0])
+        access_token = await verify_token(req_token)
+        response = templates.TemplateResponse("chatgpt.html", {"request": request, "access_token": access_token})
+        response.set_cookie("req_token", value=req_token)
+        response.set_cookie("access_token", value=access_token)
+        return response
 
 
     @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH", "TRACE"])
