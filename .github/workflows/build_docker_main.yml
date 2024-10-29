@@ -34,7 +34,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git tag "$version"
-          git push https://x-access-token:${GHCR_PAT}@github.com/jonathanfanee/chat2api_lq.git "$version"
+          git push https://x-access-token:${GHCR_PAT}@github.com/jonathanfan-ee/chat2api_lq.git "$version"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
