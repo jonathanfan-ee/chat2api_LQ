@@ -54,9 +54,8 @@ jobs:
         with:
           images: jonathanfanee/chat2api_lq
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            type=raw,value=dev,enable=${{ github.ref != 'refs/heads/main' }}
-            type=raw,value=v1.5.11
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ steps.get_version.outputs.version }}
 
       - name: Build and push
         uses: docker/build-push-action@v5
