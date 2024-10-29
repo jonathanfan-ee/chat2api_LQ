@@ -321,8 +321,11 @@ async def stream_response(service, response, model, max_tokens):
                                 delta = {}
                         else:
                             delta = {"content": new_text}
-                        # Do not set finish_reason to "stop" here
-                        end = False  # Ensure it doesn't end yet
+                        # # Do not set finish_reason to "stop" here
+                        # end = False  # Ensure it doesn't end yet
+                            finish_reason = "stop"
+                            end = True
+
                     else:
                         len_last_content = 0
                         if meta_data.get("finished_text"):
