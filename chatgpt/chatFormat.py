@@ -309,7 +309,7 @@ async def stream_response(service, response, model, max_tokens):
                                             image_download_url = f"{image_download_url}#{fragment}"
                                     
                                     logger.debug(f"final_url: {image_download_url}")
-                                    delta = {"content": f"\n\n![image]({image_download_url})\n"}
+                                    delta = {"content": f"\n```\n\n```\n![image]({image_download_url})\n"}
                                 else:
                                     delta = {"content": f"\n\nFailed to load the image.\n"}
                     elif message.get("end_turn"):
