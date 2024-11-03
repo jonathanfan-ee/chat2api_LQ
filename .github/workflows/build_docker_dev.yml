@@ -5,12 +5,12 @@ on:
     branches:
       - dev
     paths-ignore:
-      - 'README.md'
-      - 'docker-compose.yml'
-      - 'docker-compose-warp.yml'
-      - 'docs/**'
-      - '.github/workflows/build_docker_main.yml'
-      - '.github/workflows/build_docker_dev.yml'
+      - "README.md"
+      - "docker-compose.yml"
+      - "docker-compose-warp.yml"
+      - "docs/**"
+      - ".github/workflows/build_docker_main.yml"
+      - ".github/workflows/build_docker_dev.yml"
   workflow_dispatch:
 
 jobs:
@@ -36,7 +36,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git tag "$version"
-          git push https://x-access-token:${GHCR_PAT}@github.com/lanqian528/chat2api.git "$version"
+          git push https://x-access-token:${GHCR_PAT}@github.com/jonathanfan-ee/chat2api_LQ.git "$version"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
