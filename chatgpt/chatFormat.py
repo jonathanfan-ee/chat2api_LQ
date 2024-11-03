@@ -20,6 +20,7 @@ from utils.config import file_proxy_url
 
 ###R2客户端
 import boto3
+import aiohttp
 
 # 从环境变量中读取 Cloudflare R2 配置
 R2_ACCESS_KEY_ID = os.getenv("CLOUDFLARE_R2_ACCESS_KEY_ID")
