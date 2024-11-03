@@ -6,3 +6,5 @@
 /data/
 /.venv/
 /.vscode/
+.DS_Store
+*.rsls
