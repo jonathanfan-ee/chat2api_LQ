@@ -20,9 +20,20 @@ from utils.config import file_proxy_url
 
 def generate_download_link(file_download_url, index):
     if file_proxy_url:
+         # 解析原始 URL
         parsed_url = urllib.parse.urlparse(file_download_url)
         file_path = parsed_url.path
+        query = parsed_url.query
+        fragment = parsed_url.fragment
+        
+        # 拼接路径部分
         proxy_download_url = urllib.parse.urljoin(file_proxy_url, file_path.lstrip('/'))
+        # 重新组合完整的 URL
+        if query:
+            proxy_download_url = f"{proxy_download_url}?{query}"
+        if fragment:
+            proxy_download_url = f"{proxy_download_url}#{fragment}"
+
         return f"\n[请点击这里下载，不要点击上面 {index+1}]({proxy_download_url})\n"
     else:
         return f"\n[请点击这里下载，不要点击上面 {index+1}]({file_download_url})\n"
@@ -282,13 +293,22 @@ async def stream_response(service, response, model, max_tokens):
                                 image_download_url = await service.get_download_url(file_id)
                                 logger.debug(f"image_download_url: {image_download_url}")
                                 if image_download_url:
-                                    # 从原始URL中提取路径部分
-                                    from urllib.parse import urlparse
-                                    parsed_url = urlparse(image_download_url)
-                                    path = parsed_url.path
-                                    # 使用代理URL替换原始域名
-                                    image_download_url = f"{file_proxy_url.rstrip('/')}{path}"
-                                    logger.debug(f"proxied_url: {image_download_url}")
+                                    if file_proxy_url:
+                                        # 解析原始 URL
+                                        parsed_url = urllib.parse.urlparse(image_download_url)
+                                        file_path = parsed_url.path
+                                        query = parsed_url.query
+                                        fragment = parsed_url.fragment
+                                        
+                                        # 拼接路径部分
+                                        image_download_url = urllib.parse.urljoin(file_proxy_url, file_path.lstrip('/'))
+                                        # 重新组合完整的 URL
+                                        if query:
+                                            image_download_url = f"{image_download_url}?{query}"
+                                        if fragment:
+                                            image_download_url = f"{image_download_url}#{fragment}"
+                                    
+                                    logger.debug(f"final_url: {image_download_url}")
                                     delta = {"content": f"\n\n![image]({image_download_url})\n"}
                                 else:
                                     delta = {"content": f"\n\nFailed to load the image.\n"}
@@ -446,6 +466,13 @@ async def api_messages_to_chat(service, api_messages, upload_by_url=False):
                                 "name": file_name,
                                 "mime_type": mime_type,
                             })
+                    else:
+                        # 上传失败，处理方式
+                        logger.error(f"Failed to upload file from URL: {url}")
+                        # 选项1：跳过此文件
+                        continue
+                        # 选项2：抛出异常
+                        # raise Exception(f"Failed to upload file from URL: {url}")
             metadata = {
                 "attachments": attachments
             }

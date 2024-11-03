@@ -449,7 +449,7 @@ class ChatService:
             logger.error(f"Failed to upload file: {e}")
             return False
 
-    async def upload_file(self, file_content, mime_type):
+    async def upload_file(self, file_content, mime_type, max_retries=3, retry_delay=1):
         if not file_content or not mime_type:
             return None
 
@@ -466,21 +466,40 @@ class ChatService:
         use_case = await determine_file_use_case(mime_type)
 
         file_id, upload_url = await self.get_upload_url(file_name, file_size, use_case)
-        if file_id and upload_url:
-            if await self.upload(upload_url, file_content, mime_type):
-                download_url = await self.get_download_url_from_upload(file_id)
-                if download_url:
-                    file_meta = {
-                        "file_id": file_id,
-                        "file_name": file_name,
-                        "size_bytes": file_size,
-                        "mime_type": mime_type,
-                        "width": width,
-                        "height": height,
-                        "use_case": use_case,
-                    }
-                    logger.info(f"File_meta: {file_meta}")
-                    return file_meta
+        if not file_id or not upload_url:
+            logger.error("Failed to get upload url")
+            return None
+        # 重试逻辑
+        for attempt in range(1, max_retries + 1):
+            try:
+                if await self.upload(upload_url, file_content, mime_type):
+                    download_url = await self.get_download_url_from_upload(file_id)
+                    if download_url:
+                        file_meta = {
+                            "file_id": file_id,
+                            "file_name": file_name,
+                            "size_bytes": file_size,
+                            "mime_type": mime_type,
+                            "width": width,
+                            "height": height,
+                            "use_case": use_case
+                        }
+                        logger.info(f"File_meta: {file_meta}")
+                        return file_meta
+                    else:
+                        logger.error("Failed to get download url")
+                else:
+                        logger.error(f"Attempt {attempt}: Failed to upload file")
+            except Exception as e:
+                logger.error(f"Attempt {attempt}: Exception during upload: {e}")
+            if attempt < max_retries:
+                logger.info(f"Retrying upload in {retry_delay} seconds... (Attempt {attempt + 1}/{max_retries})")
+                await asyncio.sleep(retry_delay)
+                # 可选：增加重试间隔（指数退避）
+                retry_delay *= 2
+            else:
+                logger.error("Max retries reached. Giving up on upload.")
+        return None
 
     async def check_upload(self, file_id):
         url = f'{self.base_url}/files/{file_id}'
