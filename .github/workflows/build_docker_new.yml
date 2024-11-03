@@ -55,7 +55,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: jonathanfanee/chat2api_LQ
+          images: jonathanfanee/chat2api_lq
           tags: |
             type=raw,value=latest-new
             type=raw,value=${{ steps.get_version.outputs.version }}
