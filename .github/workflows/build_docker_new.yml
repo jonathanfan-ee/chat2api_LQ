@@ -1,16 +1,17 @@
-name: Build Docker Image (dev)
+name: Build Docker Image (new)
 
 on:
   push:
     branches:
-      - dev
+      - new
     paths-ignore:
-      - 'README.md'
-      - 'docker-compose.yml'
-      - 'docker-compose-warp.yml'
-      - 'docs/**'
-      - '.github/workflows/build_docker_main.yml'
-      - '.github/workflows/build_docker_dev.yml'
+      - "README.md"
+      - "docker-compose.yml"
+      - "docker-compose-warp.yml"
+      - "docs/**"
+      - ".github/workflows/build_docker_main.yml"
+      - ".github/workflows/build_docker_dev.yml"
+      - ".github/workflows/build_docker_new.yml"
   workflow_dispatch:
 
 jobs:
@@ -56,7 +57,7 @@ jobs:
         with:
           images: jonathanfanee/chat2api_LQ
           tags: |
-            type=raw,value=latest-dev
+            type=raw,value=latest-new
             type=raw,value=${{ steps.get_version.outputs.version }}
 
       - name: Build and push
