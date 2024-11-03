@@ -18,6 +18,37 @@ import urllib.parse
 import os
 from utils.config import file_proxy_url
 
+###R2客户端
+import boto3
+
+# 从环境变量中读取 Cloudflare R2 配置
+R2_ACCESS_KEY_ID = os.getenv("CLOUDFLARE_R2_ACCESS_KEY_ID")
+R2_SECRET_ACCESS_KEY = os.getenv("CLOUDFLARE_R2_SECRET_ACCESS_KEY")
+R2_BUCKET_NAME = os.getenv("CLOUDFLARE_R2_BUCKET_NAME")
+R2_ACCOUNT_ID = os.getenv("CLOUDFLARE_R2_ACCOUNT_ID")
+PUBLIC_DOMAIN = os.getenv("PUBLIC_DOMAIN")  
+
+# 配置 R2 客户端
+s3_client = boto3.client(
+    's3',
+    endpoint_url=f"https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com",
+    aws_access_key_id=R2_ACCESS_KEY_ID,
+    aws_secret_access_key=R2_SECRET_ACCESS_KEY
+)
+
+async def upload_to_r2(local_image_path, object_name):
+    try:
+        # 上传文件到 Cloudflare R2
+        s3_client.upload_file(local_image_path, R2_BUCKET_NAME, object_name)
+        
+        # 生成公开的 URL
+        r2_url = f"{PUBLIC_DOMAIN}/{object_name}"
+        return r2_url
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to upload file to R2: {str(e)}")
+
+
+
 def generate_download_link(file_download_url, index):
     if file_proxy_url:
          # 解析原始 URL
@@ -290,28 +321,33 @@ async def stream_response(service, response, model, max_tokens):
                                 last_content_type = "image_asset_pointer"
                                 file_id = part.get('asset_pointer').replace('file-service://', '')
                                 logger.debug(f"file_id: {file_id}")
+                                
+                                # 获取本地文件的临时下载 URL
                                 image_download_url = await service.get_download_url(file_id)
                                 logger.debug(f"image_download_url: {image_download_url}")
+                                
                                 if image_download_url:
-                                    if file_proxy_url:
-                                        # 解析原始 URL
-                                        parsed_url = urllib.parse.urlparse(image_download_url)
-                                        file_path = parsed_url.path
-                                        query = parsed_url.query
-                                        fragment = parsed_url.fragment
-                                        
-                                        # 拼接路径部分
-                                        image_download_url = urllib.parse.urljoin(file_proxy_url, file_path.lstrip('/'))
-                                        # 重新组合完整的 URL
-                                        if query:
-                                            image_download_url = f"{image_download_url}?{query}"
-                                        if fragment:
-                                            image_download_url = f"{image_download_url}#{fragment}"
+                                    # 下载并保存本地临时文件
+                                    local_image_path = f"/tmp/{file_id}.webp"
+                                    async with aiohttp.ClientSession() as session:
+                                        async with session.get(image_download_url) as resp:
+                                            if resp.status == 200:
+                                                with open(local_image_path, 'wb') as f:
+                                                    f.write(await resp.read())
+                                            else:
+                                                raise HTTPException(status_code=404, detail="Failed to download image")
                                     
-                                    logger.debug(f"final_url: {image_download_url}")
-                                    delta = {"content": f"\n```\n\n![image]({image_download_url})\n\n"}
+                                    # 上传图片到 R2
+                                    r2_image_url = await upload_to_r2(local_image_path, f"{file_id}.webp")
+                                    logger.debug(f"R2 Image URL: {r2_image_url}")
+                                    
+                                    # 删除本地临时文件
+                                    os.remove(local_image_path)
+
+                                    # 使用 R2 URL 生成输出内容
+                                    delta = {"content": f"\n```\n\n![image]({r2_image_url})\n\n"}
                                 else:
-                                    delta = {"content": f"\nn```\n\nFailed to load the image.\n"}
+                                    delta = {"content": f"\n```\n\nFailed to load the image.\n"}
                     elif message.get("end_turn"):
                         part = content.get("parts", [])[0]
                         new_text = part[len_last_content:]
