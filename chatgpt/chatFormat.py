@@ -14,6 +14,19 @@ from api.files import get_file_content
 from api.models import model_system_fingerprint
 from api.tokens import split_tokens_from_content, calculate_image_tokens, num_tokens_from_messages
 from utils.Logger import logger
+import urllib.parse
+import os
+from utils.config import file_proxy_url
+
+def generate_download_link(file_download_url, index):
+    if file_proxy_url:
+        parsed_url = urllib.parse.urlparse(file_download_url)
+        file_path = parsed_url.path
+        proxy_download_url = urllib.parse.urljoin(file_proxy_url, file_path.lstrip('/'))
+        return f"\n[请点击这里下载，不要点击上面 {index+1}]({proxy_download_url})\n"
+    else:
+        return f"\n[请点击这里下载，不要点击上面 {index+1}]({file_download_url})\n"
+   
 
 moderation_message = "I'm sorry, I cannot provide or engage in any content related to pornography, violence, or any unethical material. If you have any other questions or need assistance, please feel free to let me know. I'll do my best to provide support and assistance."
 
@@ -167,6 +180,12 @@ async def stream_response(service, response, model, max_tokens):
         try:
             if chunk.startswith("data: {"):
                 chunk_old_data = json.loads(chunk[6:])
+                #这里是20240621但是单独为了修复文件浏览问题而设置的，但是目前貌似没有需要了
+                # recipient = chunk_old_data.get("message", {}).get("recipient", "")
+                # # 跳过特定响应
+                # if recipient == "myfiles_browser":
+                #     continue
+                
                 finish_reason = None
                 message = chunk_old_data.get("message", {})
                 conversation_id = chunk_old_data.get("conversation_id")
@@ -263,9 +282,16 @@ async def stream_response(service, response, model, max_tokens):
                                 image_download_url = await service.get_download_url(file_id)
                                 logger.debug(f"image_download_url: {image_download_url}")
                                 if image_download_url:
-                                    delta = {"content": f"\n```\n![image]({image_download_url})\n"}
+                                    # 从原始URL中提取路径部分
+                                    from urllib.parse import urlparse
+                                    parsed_url = urlparse(image_download_url)
+                                    path = parsed_url.path
+                                    # 使用代理URL替换原始域名
+                                    image_download_url = f"{file_proxy_url.rstrip('/')}{path}"
+                                    logger.debug(f"proxied_url: {image_download_url}")
+                                    delta = {"content": f"\n\n![image]({image_download_url})\n"}
                                 else:
-                                    delta = {"content": f"\n```\nFailed to load the image.\n"}
+                                    delta = {"content": f"\n\nFailed to load the image.\n"}
                     elif message.get("end_turn"):
                         part = content.get("parts", [])[0]
                         new_text = part[len_last_content:]
@@ -276,7 +302,8 @@ async def stream_response(service, response, model, max_tokens):
                                 for i, sandbox_path in enumerate(matches):
                                     file_download_url = await service.get_response_file_url(conversation_id, message_id, sandbox_path)
                                     if file_download_url:
-                                        file_url_content += f"\n```\n\n![File {i+1}]({file_download_url})\n"
+                                        # file_url_content += f"\n```\n\n![File {i+1}]({file_download_url})\n"
+                                        file_url_content += generate_download_link(file_download_url, i)
                                 delta = {"content": file_url_content}
                             else:
                                 delta = {}
@@ -393,6 +420,8 @@ async def api_messages_to_chat(service, api_messages, upload_by_url=False):
                             width, height = file_meta["width"], file_meta["height"]
                             file_tokens += await calculate_image_tokens(width, height, detail)
                             parts.append({
+                                # "content_type": "image_asset_pointer",
+                                #Oaifree代理貌似不能用这个，但是现在不使用oaifree代理，所以恢复原本正常
                                 "content_type": "image_asset_pointer",
                                 "asset_pointer": f"file-service://{file_id}",
                                 "size_bytes": file_size,
