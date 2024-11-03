@@ -76,6 +76,18 @@ async def send_conversation(request: Request, req_token: str = Depends(oauth2_sc
         logger.debug(f"Raw request body: {request_body.decode('utf-8')}")
         # 提取 JSON 数据并赋值给 request_data
         request_data = await request.json()
+         # 获取模型名称
+        model = request_data.get('model', '')
+        o1_models = ['o1-mini', 'o1-preview']
+        # 如果模型是 o1 系列，移除 system 消息
+        if model in o1_models:
+            original_length = len(request_data.get('messages', []))
+            # 过滤掉 role 为 'system' 的消息
+            filtered_messages = [msg for msg in request_data['messages'] if msg.get('role') != 'system']
+            removed_count = original_length - len(filtered_messages)
+            if removed_count > 0:
+                request_data['messages'] = filtered_messages
+                logger.info(f"Removed {removed_count} system message(s) for model '{model}'.")
         # 处理 request_data，将非标准格式的 'image_url' 转换为标准格式
         for message in request_data.get('messages', []):
             if 'content' in message and isinstance(message['content'], list):
