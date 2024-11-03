@@ -275,7 +275,8 @@ async def stream_response(service, response, model, max_tokens):
                             else:
                                 if role == 'assistant' and last_role != 'assistant':
                                     if recipient == 'dalle.text2im':
-                                        new_text = f"\n```{recipient}\n{part[len_last_content:]}"
+                                        # new_text = f"\n```{recipient}\n{part[len_last_content:]}"
+                                        new_text = f"\n\n{part[len_last_content:]}"
                                     elif last_role == None:
                                         new_text = part[len_last_content:]
                                     else:
